@@ -1,8 +1,5 @@
 # RNAdegformer-WebApp
 
-
-
-
 I made this web application (inspired by https://github.com/fatihozturkh2o/explorna_wave
 ) using h2o's wave so that RNAdegformer models can be used easily. In addition, if your computer is too slow to run the app, you can also use Kaggle notebooks (you get 40 free GPU hours per week) I created to use the models:
 
@@ -24,22 +21,22 @@ In this page you can predict RNA degradation at each nucleotide and visualize th
 
 
 ## How to run
-Clone the repo to your local. Preferably, This should be run on a Linux Machine (I recommend Ubuntu).
-
-Before everything make sure that wave is ready.
-For instructions on installation: https://wave.h2o.ai/docs/installation
-Use this version of wave: https://github.com/h2oai/wave/releases/tag/v0.10.0
-
-Start the server with
-
+Clone the repo to your local linux machine (I recommend Ubuntu). Then create an environment:
 ```bash
-cd $HOME/wave
-./waved
+conda create -n RNA python==3.8
+```
+
+Before everything make sure that wave is ready. Use this version of wave: https://github.com/h2oai/wave/releases/tag/v0.10.0
+
+To install and and start the wave server:
+```bash
+wget https://github.com/h2oai/wave/releases/download/v0.10.0/wave-0.10.0-linux-amd64.tar.gz
+tar -xvzf wave-0.10.0-linux-amd64.tar.gz
+cd wave-0.10.0-linux-amd64
+./waved &
 ```
 
 This needs to be running for the app to work. So leave the terminal with waved running and open a new one to do the rest of the setup
-
-
 **1.** Open terminal in the cloned folder and run: <code>make setup</code>
 
 **2.** Then run the bash file: for Ubuntu: <code>bash Ubuntu_setup_draw_rna.sh</code> , for Mac: <code>bash MacOS_setup_draw_rna.sh</code>

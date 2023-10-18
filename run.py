@@ -14,7 +14,6 @@ import zipfile
 import time
 
 
-
 os.environ["ARNIEFILE"] = f"arnie.conf"
 
 
@@ -23,10 +22,6 @@ from dna_analysis import *
 import RNA_Inference
 
 #from model_prediction import load_models,bpps_path,get_prediction_df_dict,bpps_check
-
-
-
-
 
 
 # #for cmaps check out https://matplotlib.org/3.2.1/tutorials/colors/colormaps.html
@@ -52,7 +47,6 @@ plot_height = 5
 plot_width = 3
 
 data_display_max_nrows = 10
-
 
 
 def get_image(file_name = "image1"):
@@ -111,6 +105,7 @@ def make_ui_table(df, n_rows, name = "head_of_table"):
     )
     return table
 
+
 async def delete_pages(q: Q,keep_nav=False):
     # There does not seem to be a way to know what pages are in q.page
     page_list = ['nav','home', 'upload', 'example', 'infoboard1','data_info','stn_hist',
@@ -127,9 +122,8 @@ async def delete_pages(q: Q,keep_nav=False):
             #print('some error')
             pass
 
+
 async def display_nav(q: Q):
-
-
 
     q.page['nav'] = ui.tab_card(
         box='3 1 9 1',
@@ -176,21 +170,6 @@ async def display_file_upload(q):
         q.page['data_view'] = ui.form_card(box='4 2 9 7', items=data_items)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async def predict_rna_tab(q):
     ui_list_custom = [
         ui.text_m(f'In this section, you can directly type a sequence and get predictions for the following targets: {target_columns}.'),
@@ -214,8 +193,6 @@ async def predict_rna_tab(q):
         #     title='Average prediction value plots for each sequence position.',
         #     content=q.client.rna_predictions_html_pos
         # )
-
-
 
         q.client.rna_predictions_html_pos = position_based_plot_single(q.client.rna_predictions, target_columns, size=500)
         q.page['plot_seqpos'] = ui.frame_card(
@@ -296,8 +273,8 @@ async def rna_model_predict(q):
     await q.page.save()
     del q.page['progress']
 
-    q.client.rna_predictions, q.client.rna_aw, q.client.rna_input_features  = \
-    q.client.rna_inference.predict(q.args.rna_sequence_textbox)
+    q.client.rna_predictions, q.client.rna_aw, q.client.rna_input_features = q.client.rna_inference.predict(q.args.rna_sequence_textbox)
+    
     q.client.rna_predictions_df=pd.DataFrame(columns=['position']+target_columns)
     q.client.rna_predictions_df['position']=np.arange(len(q.client.rna_predictions))
     q.client.rna_predictions_df[target_columns]=q.client.rna_predictions
@@ -309,6 +286,55 @@ async def rna_model_predict(q):
 
     elapsed_time = time.time() - start_time_main
     print(f"minutes passed for getting predictions: {round(elapsed_time/60, 2)}")
+
+
+
+async def rna_model_predict_headless(q):
+    """
+    By TK, 2023
+    A quick way to hijack the model. User provides a very long RNA sequence.
+    This function chops it down to 107nt chunks each, independently predicts the stability on each chunk.
+    The results are then captured as csv files. 
+    rna_predictions_123.csv -> the results of chunk [122bp, 239bp) due to 0-indexing.
+    """
+    # Loading models
+    start_time_main = time.time()
+
+    if q.client.rna_models_loaded is None:
+        q.page['progress'] = ui.form_card(box='4 6 9 1',
+                                          items=[ui.progress(label="Loading models...")])
+        await q.page.save()
+        del q.page['progress']
+        q.client.rna_inference=RNA_Inference.RNA_Inference()
+        q.client.rna_inference.load_models('RNA_Inference/best_weights')
+        q.client.rna_models_loaded=True
+
+    q.page['progress'] = ui.form_card(box='4 6 9 1',
+                                      items=[ui.progress(label="Getting predictions...")])
+    await q.page.save()
+    del q.page['progress']
+    
+    # Tile the entire genomic RNA into chunks
+    # RNAdegformer has a short length limit.
+    full_sequence = q.args.rna_sequence_textbox
+    for start_pos in range(0, len(full_sequence)-107+1, 1):
+        seq_chunk = full_sequence[start_pos:start_pos+107]
+        out_filename = 'temp/rna_predictions_%d.csv' % start_pos
+        print(seq_chunk)
+        
+        q.client.rna_predictions, q.client.rna_aw, q.client.rna_input_features = q.client.rna_inference.predict(seq_chunk)
+        q.client.rna_predictions_df=pd.DataFrame(columns=['position']+target_columns)
+        q.client.rna_predictions_df['position']=np.arange(len(q.client.rna_predictions))
+        q.client.rna_predictions_df[target_columns]=q.client.rna_predictions
+        q.client.rna_predictions_df.to_csv(out_filename, index=False)
+    
+    
+    
+    q.client.rna_predictions_path, = await q.site.upload(['temp/rna_predictions.csv'])
+
+    elapsed_time = time.time() - start_time_main
+    print(f"minutes passed for getting predictions: {round(elapsed_time/60, 2)}")
+
 
 
 async def home(q):
@@ -345,9 +371,6 @@ async def display_data_parameters_page(q,random_sample_disabled=True):
     #         await home(q)
 
 
-
-
-
 async def main(q: Q):
     # Upload the logo & images
     if q.client.all_pages is None:
@@ -379,7 +402,7 @@ async def main(q: Q):
         #q.client.virus_topk = q.args.virus_topk
         q.client.activetab = "rnaprediction"
         await rna_model_predict(q)
-        #print('line 815')
+        #await rna_model_predict_headless(q)
         await predict_rna_tab(q)
 
 

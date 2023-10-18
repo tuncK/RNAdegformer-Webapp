@@ -24,6 +24,7 @@ In this page you can predict RNA degradation at each nucleotide and visualize th
 Clone the repo to your local linux machine (I recommend Ubuntu). Then create an environment:
 ```bash
 conda create -n RNA python==3.8
+conda activate RNA
 ```
 
 Before everything make sure that wave is ready. Use this version of wave: https://github.com/h2oai/wave/releases/tag/v0.10.0
@@ -37,6 +38,7 @@ cd wave-0.10.0-linux-amd64
 ```
 
 This needs to be running for the app to work. So leave the terminal with waved running and open a new one to do the rest of the setup
+
 **1.** Open terminal in the cloned folder and run: <code>make setup</code>
 
 **2.** Then run the bash file: for Ubuntu: <code>bash Ubuntu_setup_draw_rna.sh</code> , for Mac: <code>bash MacOS_setup_draw_rna.sh</code>
